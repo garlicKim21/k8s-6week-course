@@ -410,7 +410,7 @@ kubectl get pods
 
 ```bash
 # 이미지 업데이트 (nginx 1.27 → 1.28)
-kubectl set image deployment/nginx-deployment nginx=nginx:1.28
+kubectl set image deployment/nginx-deployment nginx=nginx:1.27
 
 # 업데이트 상태 확인
 kubectl rollout status deployment/nginx-deployment

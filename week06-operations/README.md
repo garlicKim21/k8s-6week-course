@@ -372,7 +372,7 @@ spec:
 | `httpGet` | HTTP GET 요청, 2xx-3xx 응답이면 성공 |
 | `tcpSocket` | TCP 연결 시도, 연결되면 성공 |
 | `exec` | 컨테이너 내 명령 실행, 종료코드 0이면 성공 |
-| `grpc` | gRPC 헬스체크 (Kubernetes 1.24+) |
+| `grpc` | gRPC 헬스체크 (Kubernetes 1.35+) |
 
 ### 4.3 Probe 설정 예시
 
@@ -511,7 +511,7 @@ spec:
     spec:
       containers:
       - name: app
-        image: nginx:1.26  # 업데이트할 이미지
+        image: nginx:1.27  # 업데이트할 이미지
         ports:
         - containerPort: 80
         readinessProbe:

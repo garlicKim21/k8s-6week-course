@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: rolling-demo
   annotations:
-    kubernetes.io/change-cause: "Initial deployment with nginx:1.26"
+    kubernetes.io/change-cause: "Initial deployment with nginx:1.27"
 spec:
   replicas: 3
   selector:
@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: app
-        image: nginx:1.26  # 업데이트 테스트: 1.27로 변경
+        image: nginx:1.27  # 업데이트 테스트: 1.27로 변경
         ports:
         - containerPort: 80
 
