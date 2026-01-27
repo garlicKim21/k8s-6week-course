@@ -25,7 +25,7 @@ busybox: "1.36"
 redis: "7"
 
 # 추가 도구
-runc: "1.2.3"
+runc: "1.4.0"
 cni_plugins: "1.6.1"
 
 # 메타 정보 (문서용)

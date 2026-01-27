@@ -198,7 +198,7 @@ sudo systemctl status containerd
 #### 3.5.3 runc 설치
 
 ```bash
-RUNC_VERSION="1.2.3"
+RUNC_VERSION="1.4.0"
 
 cd /tmp
 wget "https://github.com/opencontainers/runc/releases/download/v${RUNC_VERSION}/runc.amd64"

@@ -61,7 +61,7 @@ minikube: "1.38.0"      # 예: 1.37.0 → 1.38.0
 
 ```bash
 git add versions.yaml
-git commit -m "chore: Kubernetes 1.36 버전 업데이트"
+git commit -m "chore: Kubernetes 1.35 버전 업데이트"
 ```
 
 3. 끝! pre-commit hook이 자동으로 모든 파일을 업데이트합니다.
