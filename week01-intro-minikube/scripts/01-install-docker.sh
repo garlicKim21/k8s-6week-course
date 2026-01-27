@@ -40,7 +40,8 @@ sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plug
 # 현재 사용자를 docker 그룹에 추가
 echo ""
 echo "=== 사용자 권한 설정 ==="
-sudo usermod -aG docker $USER
+TARGET_USER="${SUDO_USER:-$USER}"
+sudo usermod -aG docker "$TARGET_USER"
 
 echo ""
 echo "=== Docker 설치 완료 ==="
