@@ -1,3 +1,7 @@
+# Local documentation (not for public)
+docs/
+CLAUDE.local.md
+
 # PowerPoint files (reference only, not for version control)
 *.pptx
 *.ppt
