@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: backend
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+    protocol: TCP
+  # 클라우드 환경에서는 External IP가 자동 할당됨
+  # On-premise에서는 MetalLB 같은 로드밸런서 구현 필요

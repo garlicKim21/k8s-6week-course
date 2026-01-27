@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app-with-ambassador
+  labels:
+    pattern: ambassador
+spec:
+  containers:
+  # 메인 애플리케이션 - localhost로 Redis 접근
+  - name: app
+    image: redis:7
+    command: ['sh', '-c', 'redis-cli -h localhost ping && sleep infinity']
+    env:
+    - name: REDIS_HOST
+      value: "localhost"
+    - name: REDIS_PORT
+      value: "6379"
+
+  # Ambassador 컨테이너: Redis 프록시 역할
+  # 실제로는 Redis를 직접 실행 (데모용)
+  - name: redis-ambassador
+    image: redis:7
+    ports:
+    - containerPort: 6379
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "100m"
+      limits:
+        memory: "128Mi"
+        cpu: "200m"

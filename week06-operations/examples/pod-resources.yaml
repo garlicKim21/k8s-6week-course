@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: resource-demo
+spec:
+  containers:
+  - name: app
+    image: nginx:1.27
+    ports:
+    - containerPort: 80
+    resources:
+      # 최소 보장 리소스 (스케줄링 기준)
+      requests:
+        memory: "64Mi"   # 64 Mebibytes
+        cpu: "250m"      # 0.25 vCPU
+
+      # 최대 사용 가능 리소스
+      limits:
+        memory: "128Mi"  # 초과 시 OOMKill
+        cpu: "500m"      # 초과 시 throttling
+
+---
+# Guaranteed QoS 예시 (requests = limits)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: guaranteed-pod
+spec:
+  containers:
+  - name: app
+    image: nginx:1.27
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "500m"
+      limits:
+        memory: "128Mi"  # requests와 동일
+        cpu: "500m"      # requests와 동일

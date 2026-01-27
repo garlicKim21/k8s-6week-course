@@ -15,7 +15,7 @@
 1. **일반 입문자 대상**: 누구나 접근할 수 있는 오픈 교육 자료
 2. **점진적 학습**: Minikube → Kubeadm 순서로 난이도 점진적 상승
 3. **레포 기반 교재**: PPT 없이 마크다운 문서만으로 완결성 있는 교재
-4. **최신 버전**: Kubernetes 1.32+, Ubuntu 24.04 기준
+4. **최신 버전**: Kubernetes 1.35, Cilium 1.18.6, Containerd 2.2.1, Ubuntu 24.04 기준
 5. **확장된 커리큘럼**: 6주 과정으로 충분한 학습 시간 확보
 
 ---
@@ -124,7 +124,7 @@ kubernetes-study/
 | 이론 | 배포 방식 비교, Kubeadm 원리, CNI 개념 |
 | 실습 | VM 3대 준비 → 노드 사전 준비 → kubeadm init → join → Cilium 설치 |
 | 스크립트 | prepare-node.sh (Ubuntu 24.04 대응), install-cilium.sh |
-| 변경 사항 | - Rocky Linux → Ubuntu 24.04<br>- Kubernetes 1.34 → 1.32<br>- Containerd 2.2.0 → 2.0.1<br>- Cilium 버전 업데이트 |
+| 변경 사항 | - Rocky Linux → Ubuntu 24.04<br>- Kubernetes → 1.35<br>- Containerd → 2.2.1<br>- Cilium → 1.18.6 |
 | 참고 자료 | 기존 01-kubeadm/, kubernetes-study.pptx 슬라이드 50-59 |
 
 ### 4주차: Kubernetes 핵심 오브젝트 (2) - 네트워크

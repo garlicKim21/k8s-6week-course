@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hostpath-pod
+spec:
+  containers:
+  - name: app
+    image: busybox:1.36
+    command: ['sh', '-c', 'ls -la /host-logs && sleep 3600']
+    volumeMounts:
+    - name: host-logs
+      mountPath: /host-logs
+      readOnly: true  # 보안상 읽기 전용 권장
+
+  volumes:
+  - name: host-logs
+    hostPath:
+      path: /var/log  # 노드의 실제 경로
+      type: Directory # 디렉토리가 존재해야 함

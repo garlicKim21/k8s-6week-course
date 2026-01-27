@@ -1,0 +1,23 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast-storage
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"  # true로 변경하면 기본 StorageClass가 됨
+provisioner: kubernetes.io/no-provisioner  # 로컬 스토리지용 (동적 프로비저닝 불가)
+volumeBindingMode: WaitForFirstConsumer  # Pod가 스케줄될 때까지 바인딩 대기
+reclaimPolicy: Delete  # PVC 삭제 시 PV도 삭제
+
+# 클라우드 환경에서는 아래와 같이 사용
+# ---
+# # AWS EBS 예시
+# apiVersion: storage.k8s.io/v1
+# kind: StorageClass
+# metadata:
+#   name: aws-gp3
+# provisioner: ebs.csi.aws.com
+# parameters:
+#   type: gp3
+#   iops: "3000"
+#   throughput: "125"
+# volumeBindingMode: WaitForFirstConsumer

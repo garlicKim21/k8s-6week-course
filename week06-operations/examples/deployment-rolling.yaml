@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rolling-demo
+  annotations:
+    kubernetes.io/change-cause: "Initial deployment with nginx:1.26"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: rolling-demo
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1        # 동시에 생성할 추가 Pod 수
+      maxUnavailable: 0  # 업데이트 중 unavailable Pod 수 (0 = 무중단)
+  template:
+    metadata:
+      labels:
+        app: rolling-demo
+    spec:
+      containers:
+      - name: app
+        image: nginx:1.26  # 업데이트 테스트: 1.27로 변경
+        ports:
+        - containerPort: 80
+
+        # 롤링 업데이트가 제대로 동작하려면 readinessProbe 필수
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          failureThreshold: 3
+
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          periodSeconds: 10
+          failureThreshold: 3
+
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rolling-demo
+spec:
+  selector:
+    app: rolling-demo
+  ports:
+  - port: 80
+    targetPort: 80
+  type: NodePort
+  # nodePort: 30080  # 생략하면 자동 할당

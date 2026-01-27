@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-configmap-env
+spec:
+  containers:
+  - name: app
+    image: busybox:1.36
+    command: ['sh', '-c', 'env && sleep 3600']
+
+    # 개별 키 참조
+    env:
+    - name: DB_HOST
+      valueFrom:
+        configMapKeyRef:
+          name: app-config
+          key: DATABASE_HOST
+    - name: DB_PORT
+      valueFrom:
+        configMapKeyRef:
+          name: app-config
+          key: DATABASE_PORT
+
+    # 전체 ConfigMap을 환경변수로 (모든 키가 환경변수가 됨)
+    envFrom:
+    - configMapRef:
+        name: app-config
+        # prefix: APP_  # 선택: 환경변수 앞에 prefix 추가

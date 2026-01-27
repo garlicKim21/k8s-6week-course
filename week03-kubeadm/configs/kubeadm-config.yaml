@@ -1,0 +1,70 @@
+# kubeadm-config.yaml
+# Kubernetes 1.35 Control Plane 초기화 설정 파일
+#
+# 사용법:
+#   sudo kubeadm init --config=kubeadm-config.yaml
+#
+# 주의: advertiseAddress를 실제 Control Plane 노드의 IP로 변경하세요.
+
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: InitConfiguration
+localAPIEndpoint:
+  # Control Plane 노드의 IP 주소 (환경에 맞게 변경)
+  advertiseAddress: 192.168.1.10
+  bindPort: 6443
+nodeRegistration:
+  # Container Runtime 소켓 경로
+  criSocket: unix:///var/run/containerd/containerd.sock
+  # Control Plane 노드 이름
+  name: k8s-master
+  # Control Plane에 일반 Pod 스케줄 방지
+  taints:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+
+---
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: ClusterConfiguration
+# Kubernetes 버전
+kubernetesVersion: v1.35.0
+# 클러스터 이름 (선택)
+clusterName: kubernetes
+
+networking:
+  # Pod 네트워크 CIDR (Cilium 기본값과 일치)
+  podSubnet: 10.244.0.0/16
+  # Service 네트워크 CIDR
+  serviceSubnet: 10.96.0.0/12
+  # DNS 도메인
+  dnsDomain: cluster.local
+
+# API Server 설정
+apiServer:
+  certSANs:
+  - "k8s-master"
+  - "192.168.1.10"
+  # 필요시 추가 SAN 항목
+
+# Controller Manager 설정
+controllerManager: {}
+
+# Scheduler 설정
+scheduler: {}
+
+# etcd 설정 (단일 노드 etcd)
+etcd:
+  local:
+    dataDir: /var/lib/etcd
+
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+# Cgroup 드라이버 (containerd와 일치)
+cgroupDriver: systemd
+# 리소스 예약 (선택)
+systemReserved:
+  cpu: "100m"
+  memory: "100Mi"
+kubeReserved:
+  cpu: "100m"
+  memory: "100Mi"

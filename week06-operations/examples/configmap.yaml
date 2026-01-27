@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  # 단순 키-값 쌍
+  DATABASE_HOST: "mysql.default.svc.cluster.local"
+  DATABASE_PORT: "3306"
+  LOG_LEVEL: "info"
+  CACHE_ENABLED: "true"
+
+  # 파일 형태 (멀티라인)
+  app.properties: |
+    server.port=8080
+    spring.profiles.active=production
+    logging.level.root=INFO
+    cache.ttl=3600
+
+  nginx.conf: |
+    server {
+        listen 80;
+        server_name localhost;
+
+        location / {
+            root /usr/share/nginx/html;
+            index index.html;
+        }
+
+        location /health {
+            return 200 'OK';
+            add_header Content-Type text/plain;
+        }
+    }

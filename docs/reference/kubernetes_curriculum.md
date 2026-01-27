@@ -8,17 +8,18 @@
   - 1~2주차: Minikube (Ubuntu 24.04 VM 1대)
   - 3~6주차: VM 기반 Kubernetes 클러스터 (Kubeadm, Ubuntu 24.04 VM 3대)
 
-### 사용 버전 (2025년 1월 기준)
+### 사용 버전 (2026년 1월 기준)
 
-| 구성 요소 | 버전 |
-|-----------|------|
-| Kubernetes | v1.32 |
-| Containerd | v2.0.1 |
-| Cilium | v1.16.5 |
-| Minikube | v1.34.0 |
-| Ubuntu | 24.04 LTS |
+| 구성 요소 | 버전 | 비고 |
+|-----------|------|------|
+| Kubernetes | v1.35 | "Timbernetes" (2025.12 릴리즈) |
+| Containerd | v2.2.1 | |
+| Cilium | v1.18.6 | |
+| Minikube | v1.36.0 | |
+| Ubuntu | 24.04 LTS | Server |
+| Docker Engine | v28.0+ | Minikube 드라이버용 |
 
-> **Note**: 버전은 강의 시점에 따라 업데이트될 수 있습니다.
+> **Note**: 버전은 강의 시점에 따라 업데이트될 수 있습니다. 최신 버전 확인은 각 프로젝트 공식 릴리즈 페이지를 참고하세요.
 
 ---
 

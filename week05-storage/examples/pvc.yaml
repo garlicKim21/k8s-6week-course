@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce  # PV의 accessMode와 일치해야 함
+  resources:
+    requests:
+      storage: 5Gi  # 요청하는 스토리지 용량 (PV보다 작거나 같아야 함)
+  storageClassName: manual  # PV의 storageClassName과 일치해야 함
