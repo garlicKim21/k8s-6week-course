@@ -274,7 +274,7 @@ minikube start --driver=docker
 
 예상 출력:
 ```
-😄  minikube v1.36.0 on Ubuntu 24.04
+😄  minikube v1.37.0 on Ubuntu 24.04
 ✨  Using the docker driver based on user configuration
 📌  Using Docker driver with root privileges
 👍  Starting control plane node minikube in cluster minikube

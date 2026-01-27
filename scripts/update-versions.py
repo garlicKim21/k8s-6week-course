@@ -77,9 +77,10 @@ def get_replacement_patterns(versions):
         (r"(cilium\s*\|\s*v?)\d+\.\d+\.\d+", rf"\g<1>{cilium}"),
 
         # ===== Minikube =====
-        (r"(Minikube\s+v?)\d+\.\d+\.\d+", rf"\g<1>{minikube}"),
-        (r"(minikube\s*\|\s*v?)\d+\.\d+\.\d+", rf"\g<1>{minikube}"),
-        (r"(minikube-)\d+\.\d+\.\d+", rf"\g<1>{minikube}"),
+        (r"(Minikube\s*\|\s*v?)\d+\.\d+\.\d+", rf"\g<1>{minikube}"),  # 테이블: | Minikube | v1.36.0 |
+        (r"(Minikube\s+v?)\d+\.\d+\.\d+", rf"\g<1>{minikube}"),       # Minikube v1.36.0
+        (r"(minikube\s+v)\d+\.\d+\.\d+", rf"\g<1>{minikube}"),        # minikube v1.36.0
+        (r"(minikube-)\d+\.\d+\.\d+", rf"\g<1>{minikube}"),           # minikube-1.36.0
 
         # ===== Ubuntu =====
         (r"(Ubuntu\s+)\d+\.\d+", rf"\g<1>{ubuntu}"),

@@ -15,7 +15,7 @@
 | Kubernetes | v1.35 | "Timbernetes" (2025.12 릴리즈) |
 | Containerd | v2.2.1 | |
 | Cilium | v1.18.6 | |
-| Minikube | v1.36.0 | |
+| Minikube | v1.37.0 | |
 | Ubuntu | 24.04 LTS | Server |
 | Docker Engine | v28.0+ | Minikube 드라이버용 |
 
