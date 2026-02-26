@@ -14,7 +14,7 @@ echo "=========================================="
 # 변수 설정
 CONTAINERD_VERSION="2.2.1"
 RUNC_VERSION="1.4.0"
-CNI_PLUGINS_VERSION="1.6.1"
+CNI_PLUGINS_VERSION="1.9.0"
 KUBERNETES_VERSION="1.35"
 ARCH="amd64"
 

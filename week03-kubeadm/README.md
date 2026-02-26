@@ -212,7 +212,7 @@ runc --version
 #### 3.5.4 CNI 플러그인 설치
 
 ```bash
-CNI_PLUGINS_VERSION="1.6.1"
+CNI_PLUGINS_VERSION="1.9.0"
 
 cd /tmp
 wget "https://github.com/containernetworking/plugins/releases/download/v${CNI_PLUGINS_VERSION}/cni-plugins-linux-amd64-v${CNI_PLUGINS_VERSION}.tgz"

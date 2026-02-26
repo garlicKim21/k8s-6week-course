@@ -96,7 +96,7 @@ redis: "7"                # redis 이미지 태그
 
 # 추가 도구
 runc: "1.2.3"             # runc 버전
-cni_plugins: "1.6.1"      # CNI 플러그인 버전
+cni_plugins: "1.9.0"      # CNI 플러그인 버전
 
 # 메타 정보 (문서용)
 kubernetes_codename: "Timbernetes"    # K8s 릴리즈 코드명
