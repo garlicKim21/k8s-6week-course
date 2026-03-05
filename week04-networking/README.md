@@ -550,6 +550,18 @@ kubectl get svc frontend-service
 curl http://<NODE-IP>:30080
 ```
 
+> **Bastion 서버를 통해 접근하는 환경인 경우**
+>
+> NodePort는 클러스터 노드의 IP로 직접 접근해야 하지만, Bastion(점프 호스트)을 경유하는 환경에서는 로컬 PC에서 노드 IP로 바로 접근할 수 없습니다.
+> 이 경우 **SSH 포트 포워딩**을 사용하여 로컬 포트를 노드의 NodePort로 터널링합니다.
+>
+> ```bash
+> # 로컬 8080 포트 → Kubernetes 노드의 30080 포트로 SSH 터널링
+> ssh -o ExitOnForwardFailure=yes -L 8080:localhost:30080 <Kubernetes Node IP> "echo 'Tunneling... Press Ctrl+C to stop'; sleep infinity"
+> ```
+>
+> 터널링이 연결되면 브라우저에서 **`http://localhost:8080`** 으로 접근하여 서비스를 확인할 수 있습니다.
+
 ### 6.4 멀티 컨테이너 Pod 실습
 
 ```bash
