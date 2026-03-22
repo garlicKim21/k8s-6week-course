@@ -1,29 +1,29 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: app-with-sidecar
+  name: sidecar-pod
   labels:
     pattern: sidecar
 spec:
   containers:
-  # 메인 애플리케이션 컨테이너
-  - name: app
+  # 메인 컨테이너: nginx 웹 서버
+  - name: web
     image: nginx:1.27
     ports:
     - containerPort: 80
     volumeMounts:
-    - name: logs
-      mountPath: /var/log/nginx
+    - name: html
+      mountPath: /usr/share/nginx/html
 
-  # Sidecar 컨테이너: 로그 수집
-  - name: log-collector
+  # 사이드카 컨테이너: 5초마다 웹 페이지 업데이트
+  - name: content-updater
     image: busybox:1.36
-    command: ['sh', '-c', 'tail -F /logs/access.log 2>/dev/null || tail -F /logs/error.log 2>/dev/null || sleep infinity']
+    command: ['sh', '-c', 'while true; do date > /html/index.html; echo "Pod: $HOSTNAME" >> /html/index.html; sleep 5; done']
     volumeMounts:
-    - name: logs
-      mountPath: /logs
+    - name: html
+      mountPath: /html
 
-  # 공유 볼륨
+  # 두 컨테이너가 공유하는 디렉토리 (5주차에서 자세히 학습)
   volumes:
-  - name: logs
+  - name: html
     emptyDir: {}

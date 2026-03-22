@@ -372,47 +372,52 @@ env | grep SERVICE
 apiVersion: v1
 kind: Pod
 metadata:
-  name: app-with-sidecar
+  name: sidecar-pod
 spec:
   containers:
-  # 메인 애플리케이션
-  - name: app
-    image: nginx
+  # 메인 컨테이너: nginx 웹 서버
+  - name: web
+    image: nginx:1.27
     ports:
     - containerPort: 80
     volumeMounts:
-    - name: logs
-      mountPath: /var/log/nginx
+    - name: html
+      mountPath: /usr/share/nginx/html
 
-  # Sidecar: 로그 수집
-  - name: log-collector
-    image: busybox
-    command: ['sh', '-c', 'tail -F /logs/access.log']
+  # 사이드카: 5초마다 웹 페이지 업데이트
+  - name: content-updater
+    image: busybox:1.36
+    command: ['sh', '-c', 'while true; do date > /html/index.html; sleep 5; done']
     volumeMounts:
-    - name: logs
-      mountPath: /logs
+    - name: html
+      mountPath: /html
 
+  # 두 컨테이너가 공유하는 디렉토리 (5주차에서 자세히 학습)
   volumes:
-  - name: logs
+  - name: html
     emptyDir: {}
 ```
 
 ```
-┌─────────────── Pod ───────────────┐
-│                                   │
-│  ┌─────────────┐  ┌─────────────┐ │
-│  │   nginx     │  │    log      │ │
-│  │   (main)    │→│  collector  │ │
-│  │             │  │  (sidecar)  │ │
-│  └──────┬──────┘  └──────┬──────┘ │
-│         │                │        │
-│         └───────┬────────┘        │
-│                 │                 │
-│          Shared Volume            │
-│           (/logs)                 │
-│                                   │
-└───────────────────────────────────┘
+┌──────────────────── Pod ────────────────────┐
+│                                             │
+│  ┌─────────────────┐  ┌──────────────────┐  │
+│  │  web (nginx)    │  │ content-updater  │  │
+│  │  :80            │  │ (busybox)        │  │
+│  │                 │  │                  │  │
+│  │  웹 페이지 서빙  │  │ 5초마다 index.html│  │
+│  │                 │  │ 업데이트          │  │
+│  └────────┬────────┘  └────────┬─────────┘  │
+│           │                    │            │
+│           └─────────┬──────────┘            │
+│                     │                       │
+│              Shared Volume                  │
+│              (/html)                        │
+│                                             │
+└─────────────────────────────────────────────┘
 ```
+
+핵심은 **nginx(메인)의 코드를 전혀 수정하지 않고**, 사이드카가 콘텐츠를 주입한다는 점입니다.
 
 **Sidecar 사용 사례:**
 - 로그 수집 (Fluent Bit, Filebeat)
@@ -562,21 +567,47 @@ curl http://<NODE-IP>:30080
 >
 > 터널링이 연결되면 브라우저에서 **`http://localhost:8080`** 으로 접근하여 서비스를 확인할 수 있습니다.
 
-### 6.4 멀티 컨테이너 Pod 실습
+### 6.4 Sidecar 패턴 실습
+
+nginx 웹 서버(메인) + busybox 콘텐츠 업데이터(사이드카) 조합입니다.
+사이드카가 5초마다 `index.html`을 갱신하고, nginx는 이를 서빙합니다.
 
 ```bash
-# Sidecar 패턴 Pod 생성
+# Sidecar Pod 생성
 kubectl apply -f examples/pod-sidecar.yaml
 
-# 컨테이너 목록 확인
-kubectl get pod app-with-sidecar -o jsonpath='{.spec.containers[*].name}'
+# 2개 컨테이너가 모두 Running인지 확인 (2/2)
+kubectl get pod sidecar-pod
 
-# 각 컨테이너 로그 확인
-kubectl logs app-with-sidecar -c app
-kubectl logs app-with-sidecar -c log-collector
+# 컨테이너 이름 확인
+kubectl get pod sidecar-pod -o jsonpath='{.spec.containers[*].name}'
+# 출력: web content-updater
+```
 
-# 특정 컨테이너에 exec
-kubectl exec -it app-with-sidecar -c app -- bash
+**사이드카가 동작하는지 확인해 봅시다:**
+
+```bash
+# nginx가 서빙하는 페이지 확인 — 현재 시간이 표시됨
+kubectl exec sidecar-pod -c web -- curl -s localhost
+
+# 몇 초 후 다시 실행 — 시간이 바뀐 것을 확인!
+kubectl exec sidecar-pod -c web -- curl -s localhost
+```
+
+> **포인트:** nginx의 설정이나 이미지를 전혀 수정하지 않았는데도,
+> 사이드카 컨테이너가 공유 디렉토리를 통해 웹 페이지를 계속 업데이트하고 있습니다.
+> 이것이 사이드카 패턴의 핵심입니다 — **메인 앱을 건드리지 않고 기능을 보조합니다.**
+
+```bash
+# 포트포워딩으로 브라우저에서도 확인 가능
+kubectl port-forward sidecar-pod 8080:80
+# 브라우저에서 http://localhost:8080 접속 후 새로고침하면 시간이 변함
+
+# 사이드카 컨테이너 로그 확인
+kubectl logs sidecar-pod -c content-updater
+
+# 정리
+kubectl delete pod sidecar-pod
 ```
 
 ---
