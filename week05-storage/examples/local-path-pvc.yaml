@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: local-path-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path  # local-path-provisioner가 제공하는 StorageClass
+  resources:
+    requests:
+      storage: 1Gi

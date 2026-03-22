@@ -62,19 +62,20 @@ metadata:
   name: emptydir-pod
 spec:
   containers:
-  - name: writer
-    image: busybox
-    command: ['sh', '-c', 'echo "Hello" > /data/hello.txt && sleep 3600']
+  - name: content-creator
+    image: busybox:1.36
+    command: ['sh', '-c', 'echo "<h1>Hello from emptyDir!</h1>" > /usr/share/nginx/html/index.html && sleep 3600']
     volumeMounts:
     - name: shared-data
-      mountPath: /data
+      mountPath: /usr/share/nginx/html
 
-  - name: reader
-    image: busybox
-    command: ['sh', '-c', 'cat /data/hello.txt && sleep 3600']
+  - name: web
+    image: nginx:1.27
+    ports:
+    - containerPort: 80
     volumeMounts:
     - name: shared-data
-      mountPath: /data
+      mountPath: /usr/share/nginx/html
 
   volumes:
   - name: shared-data
@@ -82,21 +83,23 @@ spec:
 ```
 
 ```
-┌─────────────── Pod ───────────────┐
-│                                   │
-│  ┌─────────────┐  ┌─────────────┐ │
-│  │   writer    │  │   reader    │ │
-│  │  /data      │  │  /data      │ │
-│  └──────┬──────┘  └──────┬──────┘ │
-│         │                │        │
-│         └───────┬────────┘        │
-│                 │                 │
-│          ┌──────▼──────┐          │
-│          │  emptyDir   │          │
-│          │  (Volume)   │          │
-│          └─────────────┘          │
-│                                   │
-└───────────────────────────────────┘
+┌──────────────────── Pod ────────────────────┐
+│                                             │
+│  ┌───────────────────┐  ┌────────────────┐  │
+│  │  content-creator  │  │  web (nginx)   │  │
+│  │  (busybox)        │  │  :80           │  │
+│  │                   │  │                │  │
+│  │  index.html 생성  │  │  웹 페이지 서빙 │  │
+│  └────────┬──────────┘  └───────┬────────┘  │
+│           │                     │           │
+│           └──────────┬──────────┘           │
+│                      │                      │
+│               ┌──────▼──────┐               │
+│               │  emptyDir   │               │
+│               │  (Volume)   │               │
+│               └─────────────┘               │
+│                                             │
+└─────────────────────────────────────────────┘
 ```
 
 **특징:**
@@ -387,21 +390,124 @@ PVC 요청:                  PV 제공:
 └────────────────────────────────────────────┘
 ```
 
-### 5.2 StorageClass 정의
+### 5.2 StorageClass란?
 
-```yaml
-# examples/storageclass.yaml
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: fast-storage
-provisioner: kubernetes.io/no-provisioner  # Local용 (동적 프로비저닝 불가)
-volumeBindingMode: WaitForFirstConsumer
-reclaimPolicy: Delete
-allowVolumeExpansion: true
+StorageClass는 **Provisioner(프로비저너)**를 지정하여 동적 프로비저닝을 가능하게 합니다.
+
+StorageClass의 주요 필드:
+
+| 필드 | 설명 |
+|------|------|
+| `provisioner` | PV를 자동 생성하는 프로비저너 지정 |
+| `parameters` | 프로비저너별 세부 설정 (디스크 타입 등) |
+| `reclaimPolicy` | PVC 삭제 시 PV 처리 방식 (`Delete`/`Retain`) |
+| `volumeBindingMode` | PV 바인딩 시점 (`Immediate`/`WaitForFirstConsumer`) |
+| `allowVolumeExpansion` | PVC 용량 확장 허용 여부 |
+
+```
+┌─────────────── StorageClass 역할 ───────────────┐
+│                                                  │
+│   StorageClass         Provisioner               │
+│   ┌──────────┐        ┌──────────────┐           │
+│   │ name     │──────→ │ PV 자동 생성  │           │
+│   │ provisioner │     │ (디스크 할당)  │           │
+│   │ parameters  │     └──────┬───────┘           │
+│   └──────────┘               │                   │
+│        ▲                     ▼                   │
+│        │              ┌──────────────┐           │
+│   PVC에서 지정         │  PV (자동)    │           │
+│                       └──────────────┘           │
+│                                                  │
+└──────────────────────────────────────────────────┘
 ```
 
-**클라우드 StorageClass 예시:**
+> **참고:** `kubernetes.io/no-provisioner`는 이름과 달리 동적 프로비저닝을 **지원하지 않습니다**.
+> 이미 존재하는 로컬 볼륨을 PV로 등록할 때만 사용하며, PVC를 만들어도 PV가 자동 생성되지 않습니다.
+
+### 5.3 local-path-provisioner 설치 (실습 환경)
+
+우리 실습 환경은 온프레미스 VM 기반 kubeadm 클러스터이므로,
+클라우드 스토리지(EBS, PD 등)를 사용할 수 없습니다.
+
+[Rancher local-path-provisioner](https://github.com/rancher/local-path-provisioner)는
+kubeadm 클러스터에서 간단히 설치할 수 있는 동적 프로비저너입니다.
+PVC를 생성하면 노드의 로컬 디스크(`/opt/local-path-provisioner`)에 자동으로 PV를 생성해줍니다.
+
+```
+┌──────────────── 동적 프로비저닝 흐름 ────────────────┐
+│                                                     │
+│  1. User: PVC 생성 (storageClassName: local-path)   │
+│                    │                                │
+│                    ▼                                │
+│  2. local-path-provisioner가 감지                    │
+│                    │                                │
+│                    ▼                                │
+│  3. 노드의 /opt/local-path-provisioner/ 에           │
+│     디렉토리 자동 생성                                │
+│                    │                                │
+│                    ▼                                │
+│  4. hostPath PV 자동 생성 및 PVC 바인딩              │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+**설치:**
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.35/deploy/local-path-storage.yaml
+
+# 설치 확인
+kubectl -n local-path-storage get pod
+kubectl get storageclass
+```
+
+설치하면 `local-path`라는 StorageClass가 생성됩니다.
+
+**동적 프로비저닝 실습:**
+
+```yaml
+# examples/local-path-pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: local-path-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
+```
+
+```yaml
+# examples/pod-with-local-path.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: local-path-pod
+spec:
+  containers:
+  - name: app
+    image: nginx:1.27
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - name: local-storage
+      mountPath: /usr/share/nginx/html
+
+  volumes:
+  - name: local-storage
+    persistentVolumeClaim:
+      claimName: local-path-pvc
+```
+
+> **참고:** local-path-provisioner는 노드 로컬 디스크를 사용하므로 데이터 복제가 없습니다.
+> 학습/개발 환경에 적합하며, 프로덕션에서는 CSI 드라이버 기반 스토리지를 사용합니다.
+
+### 5.4 클라우드 환경의 StorageClass
+
+실제 프로덕션 환경에서는 클라우드 CSI 드라이버를 provisioner로 사용합니다:
 
 ```yaml
 # AWS EBS
@@ -429,31 +535,21 @@ parameters:
 volumeBindingMode: WaitForFirstConsumer
 ```
 
-### 5.3 동적 프로비저닝 사용
+| 환경 | Provisioner | 특징 |
+|------|-------------|------|
+| 온프레미스 (실습) | `rancher.io/local-path` | 노드 로컬 디스크, 복제 없음 |
+| AWS | `ebs.csi.aws.com` | EBS 볼륨 자동 생성 |
+| GCP | `pd.csi.storage.gke.io` | Persistent Disk 자동 생성 |
+| Azure | `disk.csi.azure.com` | Azure Disk 자동 생성 |
 
-```yaml
-# PVC만 생성하면 PV 자동 생성
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: dynamic-pvc
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
-  storageClassName: fast-storage  # StorageClass 지정
-```
-
-### 5.4 기본 StorageClass
+### 5.5 기본 StorageClass
 
 ```bash
 # 기본 StorageClass 확인
 kubectl get sc
 
-# 기본 StorageClass 설정
-kubectl patch sc fast-storage -p '{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+# local-path를 기본 StorageClass로 설정
+kubectl patch sc local-path -p '{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
 ```
 
 ---
@@ -463,11 +559,18 @@ kubectl patch sc fast-storage -p '{"metadata":{"annotations":{"storageclass.kube
 ### 6.1 emptyDir 실습
 
 ```bash
-# Pod 생성
+# Pod 생성 (busybox + nginx 2개 컨테이너)
 kubectl apply -f examples/pod-emptydir.yaml
 
-# writer 컨테이너가 쓴 데이터를 reader가 읽는지 확인
-kubectl logs emptydir-pod -c reader
+# Pod 상태 확인 (2/2 Running 확인)
+kubectl get pod emptydir-pod
+
+# busybox가 생성한 웹 페이지를 nginx가 서빙하는지 확인
+kubectl exec emptydir-pod -c web -- curl -s localhost
+
+# 포트포워딩으로 브라우저에서 확인
+kubectl port-forward emptydir-pod 8080:80
+# 브라우저에서 http://localhost:8080 접속
 ```
 
 ### 6.2 PV/PVC 실습
@@ -499,7 +602,45 @@ kubectl exec -it pvc-pod -- bash -c "echo 'Hello PV!' > /usr/share/nginx/html/in
 kubectl exec pvc-pod -- cat /usr/share/nginx/html/index.html
 ```
 
-### 6.3 MySQL with PVC 실습
+### 6.3 local-path-provisioner 동적 프로비저닝 실습
+
+```bash
+# local-path-provisioner 설치
+kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.35/deploy/local-path-storage.yaml
+
+# 설치 확인 (Provisioner Pod가 Running 상태인지 확인)
+kubectl -n local-path-storage get pod
+
+# StorageClass 확인 (local-path가 보여야 함)
+kubectl get sc
+
+# PVC 생성 — PV를 직접 만들지 않아도 자동 생성됨!
+kubectl apply -f examples/local-path-pvc.yaml
+
+# PVC 상태 확인 (아직 Pending — Pod가 스케줄되어야 바인딩)
+kubectl get pvc local-path-pvc
+
+# Pod 생성
+kubectl apply -f examples/pod-with-local-path.yaml
+
+# PVC가 Bound 상태로 변경되고 PV가 자동 생성된 것 확인
+kubectl get pv,pvc
+
+# 데이터 쓰기
+kubectl exec local-path-pod -- sh -c 'echo "<h1>Dynamic Provisioning!</h1>" > /usr/share/nginx/html/index.html'
+
+# 확인
+kubectl exec local-path-pod -- curl -s localhost
+
+# 정리
+kubectl delete -f examples/pod-with-local-path.yaml
+kubectl delete -f examples/local-path-pvc.yaml
+```
+
+> **핵심 포인트:** 정적 프로비저닝(6.2)에서는 PV를 먼저 만들어야 했지만,
+> 동적 프로비저닝에서는 PVC만 만들면 PV가 **자동으로** 생성됩니다.
+
+### 6.4 MySQL with PVC 실습
 
 ```bash
 # MySQL 배포
@@ -546,6 +687,7 @@ Failed    동적 프로비저닝 실패
 3. **PersistentVolume**: 클러스터 레벨 스토리지 리소스
 4. **PersistentVolumeClaim**: 사용자의 스토리지 요청
 5. **StorageClass**: 동적 프로비저닝
+6. **local-path-provisioner**: kubeadm 클러스터에서 동적 프로비저닝 체험
 
 ### 7.4 다음 주차 예고
 
@@ -563,3 +705,4 @@ Failed    동적 프로비저닝 실패
 - [Persistent Volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
 - [Storage Classes](https://kubernetes.io/docs/concepts/storage/storage-classes/)
 - [Dynamic Volume Provisioning](https://kubernetes.io/docs/concepts/storage/dynamic-provisioning/)
+- [Rancher local-path-provisioner](https://github.com/rancher/local-path-provisioner)
